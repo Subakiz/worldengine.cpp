@@ -117,9 +117,8 @@ TEST(BenchmarkSuite, Full100StepSimulationPipeline) {
         }
 
         auto t_end = std::chrono::high_resolution_clock::now();
-        uint64_t step_duration = static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count()
-        );
+        auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count();
+        uint64_t step_duration = (nanos > 0) ? static_cast<uint64_t>((nanos + 999) / 1000) : 1ULL;
 
         if (step >= WARMUP_STEPS) {
             latencies_us.push_back(step_duration);
