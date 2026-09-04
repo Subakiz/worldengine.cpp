@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WorldEngine.cpp (PlayWorld) — Interactive WebGPU Neural Engine</title>
+    <style>
+        :root {
+            --bg-color: #0d0f14;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --hud-bg: rgba(16, 20, 28, 0.78);
+            --hud-border: rgba(0, 242, 254, 0.25);
+            --text-primary: #e6edf3;
+            --text-muted: #8b949e;
+            --key-inactive: rgba(255, 255, 255, 0.08);
+            --key-active: #00f2fe;
+            --key-text-active: #0d0f14;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, monospace;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #app-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            max-height: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #viewport {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            aspect-ratio: 16 / 9;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            cursor: crosshair;
+            background: #05070a;
+            display: block;
+        }
+
+        /* Centered crosshair */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            box-shadow: 0 0 4px rgba(0, 242, 254, 0.8);
+        }
+        #crosshair::before {
+            top: 5px;
+            left: 0;
+            width: 12px;
+            height: 2px;
+        }
+        #crosshair::after {
+            top: 0;
+            left: 5px;
+            width: 2px;
+            height: 12px;
+        }
+
+        /* Overlay Banner */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 10, 15, 0.82);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: opacity 0.25s ease-out, visibility 0.25s ease-out;
+            cursor: pointer;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .overlay-card {
+            background: var(--hud-bg);
+            border: 1px solid var(--hud-border);
+            border-radius: 12px;
+            padding: 32px 40px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 242, 254, 0.15);
+            max-width: 480px;
+            width: 90%;
+        }
+
+        .logo-title {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .logo-title span {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .instruction-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .instruction-box p {
+            font-size: 1rem;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+        }
+
+        .controls-guide {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .controls-guide span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        kbd {
+            display: inline-block;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.5);
+        }
+
+        .status-indicator {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .status-indicator.ready {
+            color: #4ade80;
+        }
+        .status-indicator.warn {
+            color: #f87171;
+        }
+
+        /* Telemetry HUD Panel */
+        .hud-panel {
+            position: absolute;
+            background: var(--hud-bg);
+            border: 1px solid var(--hud-border);
+            border-radius: 8px;
+            backdrop-filter: blur(6px);
+            padding: 10px 14px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            z-index: 20;
+            pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        #hud-telemetry {
+            top: 16px;
+            left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 220px;
+        }
+
+        .telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .telemetry-row .label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .telemetry-row .value {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        /* Active Keys HUD */
+        #hud-keys {
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 12px;
+        }
+
+        .key-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .key-cap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: var(--key-inactive);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            transition: all 0.1s ease;
+        }
+
+        .key-cap.wide {
+            width: 72px;
+            font-size: 0.7rem;
+        }
+
+        .key-cap.active {
+            background: var(--key-active);
+            color: var(--key-text-active);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.6);
+            transform: translateY(1px);
+        }
+
+        /* Mobile Consent / Click-to-load Gate */
+        #mobile-gate {
+            display: none;
+            margin-top: 15px;
+        }
+        @media (max-width: 768px) {
+            #mobile-gate {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- Main Render Surface -->
+        <canvas id="viewport" width="640" height="360" tabindex="0"></canvas>
+
+        <!-- Centered Crosshair -->
+        <div id="crosshair"></div>
+
+        <!-- Pointer Lock & Start Overlay Banner -->
+        <div id="overlay-banner" class="overlay">
+            <div class="overlay-card">
+                <h1 class="logo-title">PlayWorld <span>WebGPU</span></h1>
+                <p class="subtitle">Action-Conditioned Neural World Model Runtime</p>
+                <div class="instruction-box">
+                    <p><strong>Click Anywhere to Start &amp; Lock Mouse</strong></p>
+                    <div class="controls-guide">
+                        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
+                        <span><kbd>Mouse</kbd> Look</span>
+                        <span><kbd>Space</kbd> Jump</span>
+                        <span><kbd>Shift</kbd> Crouch</span>
+                        <span><kbd>Esc</kbd> Unlock</span>
+                    </div>
+                </div>
+                <div id="webgpu-status" class="status-indicator">Initializing WebGPU Engine...</div>
+                <div id="mobile-gate">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+                        Touch / Click anywhere to grant motion control consent.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-Time Telemetry HUD -->
+        <div id="hud-telemetry" class="hud-panel">
+            <div class="telemetry-row"><span class="label">FPS:</span> <span id="telemetry-fps" class="value">00.0</span></div>
+            <div class="telemetry-row"><span class="label">Frame Time:</span> <span id="telemetry-time" class="value">0.00 ms</span></div>
+            <div class="telemetry-row"><span class="label">Backend:</span> <span id="telemetry-backend" class="value">WebGPU WGSL</span></div>
+            <div class="telemetry-row"><span class="label">VRAM Est:</span> <span id="telemetry-vram" class="value">864 MB</span></div>
+            <div class="telemetry-row"><span class="label">Voxel Cache:</span> <span id="telemetry-cache" class="value">0.0% (0/512)</span></div>
+            <div class="telemetry-row"><span class="label">Camera Pose:</span> <span id="telemetry-pose" class="value">0, 0, 0 (0°, 0°)</span></div>
+            <div class="telemetry-row"><span class="label">Resolution:</span> <span class="value">640x360</span></div>
+        </div>
+
+        <!-- Active Key Indicators HUD -->
+        <div id="hud-keys" class="hud-panel">
+            <div class="key-row">
+                <span id="key-w" class="key-cap">W</span>
+            </div>
+            <div class="key-row">
+                <span id="key-a" class="key-cap">A</span>
+                <span id="key-s" class="key-cap">S</span>
+                <span id="key-d" class="key-cap">D</span>
+                <span id="key-space" class="key-cap wide">SPACE</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="player.js"></script>
+</body>
+</html>
