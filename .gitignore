@@ -1,0 +1,79 @@
+# ==============================================================================
+# WorldEngine.cpp (.gitignore)
+# ==============================================================================
+
+# Build Output Directories
+build/
+build-*/
+bin/
+lib/
+dist/
+out/
+
+# CMake Intermediates
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+
+# C++ Compiler & Object Files
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.dSYM/
+
+# IDE & Editor Configuration
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vs/
+*.swp
+*.swo
+*~
+
+# Operating System Metadata
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python Intermediates
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Emscripten / WebAssembly Intermediates
+player/playworld.wasm
+player/playworld.js.map
+*.wasm.map
+
+# Test Reports & Telemetry Dumps
+test_report.json
+test_benchmark_metrics.json
+*.log
+
+# Model Binary Files
+*.pwmf
+models/*.pwmf
+
+# Agent Metadata & System Generated Folders
+.agents/
+.system_generated/
+tmp/
+temp/
