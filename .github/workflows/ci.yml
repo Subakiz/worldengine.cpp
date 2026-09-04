@@ -1,0 +1,129 @@
+name: CI Multi-Platform Build & Verification
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.os }} • ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: gcc-14
+            cc: gcc-14
+            cxx: g++-14
+            cmake_flags: "-DPLAYWORLD_BUILD_TESTS=ON"
+
+          - os: ubuntu-24.04
+            compiler: clang-18
+            cc: clang-18
+            cxx: clang++-18
+            cmake_flags: "-DPLAYWORLD_BUILD_TESTS=ON"
+
+          - os: macos-14
+            compiler: apple-clang
+            cc: clang
+            cxx: clang++
+            cmake_flags: "-DPLAYWORLD_BUILD_TESTS=ON"
+
+          - os: windows-2022
+            compiler: msvc
+            cc: cl
+            cxx: cl
+            cmake_flags: "-DPLAYWORLD_BUILD_TESTS=ON"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+          if [ "${{ matrix.compiler }}" = "gcc-14" ]; then
+            sudo apt-get install -y gcc-14 g++-14
+          fi
+          if [ "${{ matrix.compiler }}" = "clang-18" ]; then
+            sudo apt-get install -y clang-18 lldb-18 lld-18
+          fi
+
+      - name: Setup macOS Dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake ninja
+
+      - name: Setup Windows Dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake ninja
+
+      - name: Configure CMake
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            ${{ matrix.cmake_flags }}
+
+      - name: Build All Targets
+        run: |
+          cmake --build build --config Release --parallel
+
+      - name: Execute CTest Suite
+        run: |
+          ctest --test-dir build --output-on-failure --no-tests=error
+
+      - name: Execute Multi-Tier Automated Tests (Linux / macOS)
+        if: runner.os != 'Windows'
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          ./scripts/run_all_tests.sh
+
+      - name: Execute Benchmark CLI Smoke Test
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ./build/bin/worldengine-bench.exe --model synthetic --steps 20 --warmup 5 --backend cpu --output-format table
+          else
+            ./build/bin/worldengine-bench --model synthetic --steps 20 --warmup 5 --backend cpu --output-format table
+          fi
+
+  web-player-lint:
+    name: WebGPU Player Asset Validation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate Web Player Files & Syntax
+        run: |
+          test -f player/index.html
+          test -f player/player.js
+          test -f player/shaders/simulation.wgsl
+          test -f player/shaders/display.wgsl
+          echo "Validating WGSL shader non-empty files..."
+          test -s player/shaders/simulation.wgsl
+          test -s player/shaders/display.wgsl
+
+      - name: Test Local HTTP Serving Compatibility
+        run: |
+          python3 -m http.server 8000 --directory player &
+          SERVER_PID=$!
+          sleep 2
+          curl -f -I http://localhost:8000/index.html
+          kill $SERVER_PID
