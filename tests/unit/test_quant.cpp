@@ -277,4 +277,37 @@ TEST(QuantSuite, Tensor_ZeroAndExtremeEdgeCases) {
     EXPECT_EQ(t_int8.size_bytes(), 1024);
 }
 
+TEST(QuantSuite, INT4_ConstantBlockZeroVariance) {
+    const std::vector<float> test_constants = {0.0f, 1.0f, 5.0f, 42.0f, 100.0f, -10.0f, 0.007f};
+
+    for (float c : test_constants) {
+        std::vector<float> input(32, c);
+        INT4Block32 block{};
+        QuantizeINT4Block32(input.data(), &block);
+
+        float out[32];
+        DequantizeINT4Block32(&block, out, true);
+
+        for (size_t i = 0; i < 32; ++i) {
+            EXPECT_FALSE(std::isnan(out[i]));
+            EXPECT_FALSE(std::isinf(out[i]));
+            EXPECT_NEAR(out[i], c, 1e-3f);
+        }
+
+        // Also test batch quantization/dequantization path
+        std::vector<float> input_batch(64, c);
+        std::vector<INT4Block32> blocks(2);
+        QuantizeINT4Block32Batch(input_batch.data(), 64, blocks.data());
+
+        std::vector<float> out_batch(64, 0.0f);
+        DequantizeINT4Block32Batch(blocks.data(), 2, out_batch.data(), true);
+
+        for (size_t i = 0; i < 64; ++i) {
+            EXPECT_FALSE(std::isnan(out_batch[i]));
+            EXPECT_FALSE(std::isinf(out_batch[i]));
+            EXPECT_NEAR(out_batch[i], c, 1e-3f);
+        }
+    }
+}
+
 TEST_RUNNER_MAIN()

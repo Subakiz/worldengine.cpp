@@ -8,9 +8,11 @@
 #include <stdexcept>
 
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
+#if !defined(_WIN32)
+#include <sys/mman.h>
 #include <unistd.h>
+#endif
 
 #if defined(__ARM_FEATURE_CRC32)
 #include <arm_acle.h>
@@ -134,6 +136,7 @@ PWMFParser& PWMFParser::operator=(PWMFParser&& other) noexcept {
 }
 
 void PWMFParser::Close() {
+#if !defined(_WIN32)
     if (mmap_addr_ != nullptr && mmap_size_ > 0) {
         munmap(mmap_addr_, mmap_size_);
         mmap_addr_ = nullptr;
@@ -143,6 +146,11 @@ void PWMFParser::Close() {
         close(fd_);
         fd_ = -1;
     }
+#else
+    mmap_addr_ = nullptr;
+    mmap_size_ = 0;
+    fd_ = -1;
+#endif
     fallback_buffer_.clear();
     tensor_descriptors_.clear();
     tensor_payload_offsets_.clear();
@@ -156,6 +164,40 @@ void PWMFParser::Close() {
 bool PWMFParser::Open(const std::string& path) {
     Close();
 
+#if defined(_WIN32)
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        last_error_ = PWMFError::IOError;
+        return false;
+    }
+
+    const std::streampos file_size_pos = file.tellg();
+    if (file_size_pos < 0) {
+        last_error_ = PWMFError::IOError;
+        return false;
+    }
+
+    const size_t file_size = static_cast<size_t>(file_size_pos);
+    if (file_size < sizeof(PWMFHeader)) {
+        last_error_ = PWMFError::FileTooSmall;
+        return false;
+    }
+
+    file.seekg(0, std::ios::beg);
+    try {
+        fallback_buffer_.resize(file_size);
+        if (!file.read(reinterpret_cast<char*>(fallback_buffer_.data()), static_cast<std::streamsize>(file_size))) {
+            Close();
+            last_error_ = PWMFError::IOError;
+            return false;
+        }
+        return ParseMemory(fallback_buffer_.data(), file_size);
+    } catch (...) {
+        Close();
+        last_error_ = PWMFError::IOError;
+        return false;
+    }
+#else
     fd_ = open(path.c_str(), O_RDONLY);
     if (fd_ < 0) {
         last_error_ = PWMFError::IOError;
@@ -201,6 +243,7 @@ bool PWMFParser::Open(const std::string& path) {
         last_error_ = PWMFError::IOError;
         return false;
     }
+#endif
 }
 
 bool PWMFParser::ParseMemory(const uint8_t* data, size_t size) {
@@ -227,13 +270,30 @@ bool PWMFParser::ParseMemory(const uint8_t* data, size_t size) {
         return false;
     }
 
+    if (header_.version_minor > PWMF_VERSION_MINOR) {
+        last_error_ = PWMFError::UnsupportedVersion;
+        return false;
+    }
+
     // 4. Validate header size
-    if (header_.header_size < sizeof(PWMFHeader)) {
+    if (header_.header_size != sizeof(PWMFHeader)) {
         last_error_ = PWMFError::FileTruncated;
         return false;
     }
 
+    // Reserved padding validation (bytes 4..27 of reserved[] must be 0)
+    for (size_t k = 4; k < sizeof(header_.reserved); ++k) {
+        if (header_.reserved[k] != 0) {
+            last_error_ = PWMFError::InvalidDescriptor;
+            return false;
+        }
+    }
+
     // 5. Validate alignment (default 64)
+    if (header_.alignment != 0 && header_.alignment != PWMF_DEFAULT_ALIGNMENT) {
+        last_error_ = PWMFError::AlignmentViolation;
+        return false;
+    }
     const uint32_t align = header_.alignment ? header_.alignment : PWMF_DEFAULT_ALIGNMENT;
     if (header_.weight_data_offset % align != 0) {
         last_error_ = PWMFError::AlignmentViolation;
@@ -241,12 +301,19 @@ bool PWMFParser::ParseMemory(const uint8_t* data, size_t size) {
     }
 
     // 6. Validate bounds of sections
-    if (header_.metadata_offset + header_.metadata_length > size) {
+    if (header_.metadata_offset != sizeof(PWMFHeader) ||
+        header_.metadata_offset > size ||
+        header_.metadata_length > size - header_.metadata_offset) {
         last_error_ = PWMFError::OffsetOutOfBounds;
         return false;
     }
 
-    if (header_.tensor_table_offset + header_.tensor_table_length > size) {
+    if (header_.tensor_table_offset > size || header_.tensor_table_length > size - header_.tensor_table_offset) {
+        last_error_ = PWMFError::OffsetOutOfBounds;
+        return false;
+    }
+    if (header_.tensor_table_offset < sizeof(PWMFHeader) ||
+        header_.tensor_table_offset < header_.metadata_offset + header_.metadata_length) {
         last_error_ = PWMFError::OffsetOutOfBounds;
         return false;
     }
@@ -257,8 +324,12 @@ bool PWMFParser::ParseMemory(const uint8_t* data, size_t size) {
         return false;
     }
 
-    if (header_.weight_data_offset + header_.weight_data_length > size) {
+    if (header_.weight_data_offset > size || header_.weight_data_length > size - header_.weight_data_offset) {
         last_error_ = PWMFError::PayloadTruncated;
+        return false;
+    }
+    if (header_.weight_data_offset < header_.tensor_table_offset + header_.tensor_table_length) {
+        last_error_ = PWMFError::OffsetOutOfBounds;
         return false;
     }
 
@@ -290,7 +361,7 @@ bool PWMFParser::ParseMemory(const uint8_t* data, size_t size) {
         }
 
         // Check payload offsets within weight data blob
-        if (desc.data_offset + desc.data_bytes > header_.weight_data_length) {
+        if (desc.data_offset > header_.weight_data_length || desc.data_bytes > header_.weight_data_length - desc.data_offset) {
             last_error_ = PWMFError::OffsetOutOfBounds;
             return false;
         }

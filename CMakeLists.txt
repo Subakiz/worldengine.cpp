@@ -9,12 +9,22 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Options
 option(PLAYWORLD_BUILD_TESTS "Build verification tests" ON)
+option(PLAYWORLD_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
 # Compiler optimization and warnings configuration
 if(MSVC)
     add_compile_options(/W4 /O2 /permissive- /utf-8)
+    if(PLAYWORLD_ENABLE_SANITIZERS)
+        add_compile_options(/fsanitize=address)
+    endif()
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic -O3)
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    if(PLAYWORLD_ENABLE_SANITIZERS)
+        add_compile_options(-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address,undefined)
+    else()
+        add_compile_options(-O3)
+    endif()
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm|aarch64|arm64")
         # Ensure ARM NEON and standard extensions are active
         add_compile_options(-march=armv8-a+crc)
@@ -38,10 +48,18 @@ target_include_directories(playworld_core PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+if(PLAYWORLD_ENABLE_SANITIZERS AND NOT MSVC)
+    target_compile_options(playworld_core PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer -g)
+    target_link_options(playworld_core INTERFACE -fsanitize=address,undefined)
+endif()
+
 # Test model generator and verification CLI
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate_test_model.cpp")
     add_executable(generate_test_model tools/generate_test_model.cpp)
     target_link_libraries(generate_test_model PRIVATE playworld_core)
+    set_target_properties(generate_test_model PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
 endif()
 
 # Standalone Native Benchmark CLI
@@ -58,5 +76,87 @@ if(PLAYWORLD_BUILD_TESTS)
     if(TARGET generate_test_model)
         add_test(NAME M1_Verification_Test COMMAND generate_test_model)
     endif()
+
+    # Unit Tests
+    add_executable(test_pwmf tests/unit/test_pwmf.cpp)
+    target_link_libraries(test_pwmf PRIVATE playworld_core)
+    set_target_properties(test_pwmf PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_pwmf COMMAND test_pwmf)
+
+    add_executable(test_quant tests/unit/test_quant.cpp)
+    target_link_libraries(test_quant PRIVATE playworld_core)
+    set_target_properties(test_quant PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_quant COMMAND test_quant)
+
+    add_executable(test_ring_buffer tests/unit/test_ring_buffer.cpp)
+    target_link_libraries(test_ring_buffer PRIVATE playworld_core)
+    set_target_properties(test_ring_buffer PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_ring_buffer COMMAND test_ring_buffer)
+
+    add_executable(test_voxel_grid tests/unit/test_voxel_grid.cpp)
+    target_link_libraries(test_voxel_grid PRIVATE playworld_core)
+    set_target_properties(test_voxel_grid PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_voxel_grid COMMAND test_voxel_grid)
+
+    add_executable(test_scheduler tests/unit/test_scheduler.cpp)
+    target_link_libraries(test_scheduler PRIVATE playworld_core)
+    set_target_properties(test_scheduler PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_scheduler COMMAND test_scheduler)
+
+    # Integration Tests
+    add_executable(test_benchmark_cli tests/integration/test_benchmark_cli.cpp)
+    target_link_libraries(test_benchmark_cli PRIVATE playworld_core)
+    set_target_properties(test_benchmark_cli PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_benchmark_cli COMMAND test_benchmark_cli)
+
+    add_executable(test_spatial_ssim tests/integration/test_spatial_ssim.cpp)
+    target_link_libraries(test_spatial_ssim PRIVATE playworld_core)
+    set_target_properties(test_spatial_ssim PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_spatial_ssim COMMAND test_spatial_ssim)
+
+    add_executable(test_memory_leak tests/integration/test_memory_leak.cpp)
+    target_link_libraries(test_memory_leak PRIVATE playworld_core)
+    set_target_properties(test_memory_leak PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_memory_leak COMMAND test_memory_leak)
+
+    # M2 Adversarial Model Fuzzing & Malformed Binary Suite
+    add_executable(test_pwmf_fuzz tests/fuzz/test_pwmf_fuzz.cpp)
+    target_link_libraries(test_pwmf_fuzz PRIVATE playworld_core)
+    set_target_properties(test_pwmf_fuzz PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_pwmf_fuzz COMMAND test_pwmf_fuzz)
+
+    # M3 High-Contention Concurrency & Threading Stress Suite
+    add_executable(test_concurrency_stress tests/stress/test_concurrency_stress.cpp)
+    target_link_libraries(test_concurrency_stress PRIVATE playworld_core)
+    set_target_properties(test_concurrency_stress PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_concurrency_stress COMMAND test_concurrency_stress)
+
+    # M4 Long-Horizon 5,000-Step Soak & Numerical Drift Simulation
+    add_executable(test_soak_simulation tests/stress/test_soak_simulation.cpp)
+    target_link_libraries(test_soak_simulation PRIVATE playworld_core)
+    set_target_properties(test_soak_simulation PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+    add_test(NAME test_soak_simulation COMMAND test_soak_simulation)
 endif()
 

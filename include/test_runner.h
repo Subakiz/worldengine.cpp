@@ -295,8 +295,8 @@ inline bool ValuesNear(double a, double b, double eps) {
 
 #define PW_CHECK_BINARY(a, b, op, fatal) \
     do { \
-        const auto& _pw_a = (a); \
-        const auto& _pw_b = (b); \
+        const auto _pw_a = (a); \
+        const auto _pw_b = (b); \
         if (!(_pw_a op _pw_b)) { \
             std::ostringstream _pw_oss; \
             _pw_oss << "Comparison (" << #a << " " << #op << " " << #b << ") failed: ["; \
@@ -333,6 +333,7 @@ inline bool ValuesNear(double a, double b, double eps) {
 #define ASSERT_GT(a, b)                PW_CHECK_BINARY(a, b, >, true)
 #define ASSERT_GE(a, b)                PW_CHECK_BINARY(a, b, >=, true)
 #define ASSERT_NEAR(a, b, eps)         PW_CHECK_NEAR(a, b, eps, true)
+#define ASSERT_FLOAT_EQ(a, b)          PW_CHECK_NEAR(a, b, 1e-5f, true)
 
 #define ASSERT_THROWS(statement, ExceptionType) \
     do { \
@@ -373,8 +374,8 @@ inline bool ValuesNear(double a, double b, double eps) {
 #define EXPECT_LE(a, b)                PW_CHECK_BINARY(a, b, <=, false)
 #define EXPECT_GT(a, b)                PW_CHECK_BINARY(a, b, >, false)
 #define EXPECT_GE(a, b)                PW_CHECK_BINARY(a, b, >=, false)
-#define EXPECT_LE(a, b)                PW_CHECK_BINARY(a, b, <=, false)
 #define EXPECT_NEAR(a, b, eps)         PW_CHECK_NEAR(a, b, eps, false)
+#define EXPECT_FLOAT_EQ(a, b)          PW_CHECK_NEAR(a, b, 1e-5f, false)
 
 // Test Runner Driver Macro
 #define TEST_RUNNER_MAIN() \

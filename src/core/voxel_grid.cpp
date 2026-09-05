@@ -17,6 +17,11 @@ FrustumMemoryGrid::FrustumMemoryGrid(size_t max_capacity_entries,
 
 VoxelCoordinate FrustumMemoryGrid::QuantizePose(const CameraPose& pose) const noexcept {
     VoxelCoordinate coord{};
+    if (!std::isfinite(pose.x) || !std::isfinite(pose.y) || !std::isfinite(pose.z) ||
+        !std::isfinite(pose.yaw) || !std::isfinite(pose.pitch)) {
+        return coord;
+    }
+
     coord.vx = static_cast<int32_t>(std::floor(pose.x / voxel_size_));
     coord.vy = static_cast<int32_t>(std::floor(pose.y / voxel_size_));
     coord.vz = static_cast<int32_t>(std::floor(pose.z / voxel_size_));

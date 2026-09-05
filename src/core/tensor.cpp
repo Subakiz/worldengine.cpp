@@ -314,15 +314,18 @@ void QuantizeINT4Block32(const float* in, INT4Block32* block) noexcept {
         if (in[i] > max_val) max_val = in[i];
     }
 
-    float scale = (max_val - min_val) / 15.0f;
-    if (scale < 1e-7f) {
-        scale = 1e-7f;
-    }
+    float range = max_val - min_val;
+    float scale = range / 15.0f;
+    float bias = 0.0f;
 
-    // zero_point / bias: in = (q - bias) * scale => q = in / scale + bias => bias = -min_val / scale
-    float bias = -min_val / scale;
-    if (bias < 0.0f) bias = 0.0f;
-    if (bias > 15.0f) bias = 15.0f;
+    if (range < 1e-7f) {
+        scale = 1.0f;
+        bias = -min_val;
+        bias = std::clamp(bias, -65504.0f, 65504.0f);
+    } else {
+        bias = -min_val / scale;
+        bias = std::clamp(bias, -65504.0f, 65504.0f);
+    }
 
     block->scale_fp16 = fp32_to_fp16(scale);
     block->bias_fp16  = fp32_to_fp16(bias);

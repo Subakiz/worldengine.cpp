@@ -65,6 +65,8 @@ player/playworld.js.map
 
 # Test Reports & Telemetry Dumps
 test_report.json
+test_report_sanitizer.json
+test_report*.json
 test_benchmark_metrics.json
 *.log
 
