@@ -1,4 +1,8 @@
 #include "test_runner.h"
+
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
 #include "playworld/engine_interface.h"
 #include "playworld/voxel_grid.h"
 #include "playworld/scheduler.h"
