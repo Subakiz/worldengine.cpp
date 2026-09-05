@@ -1,0 +1,23 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/WorldEngineTargets.cmake")
+
+# Provide target alias WorldEngine::playworld_core for backward compatibility
+if(TARGET WorldEngine::worldengine AND NOT TARGET WorldEngine::playworld_core)
+    add_library(WorldEngine::playworld_core INTERFACE IMPORTED)
+    target_link_libraries(WorldEngine::playworld_core INTERFACE WorldEngine::worldengine)
+endif()
+
+# Provide unprefixed playworld_core alias for external consumers using legacy target name
+if(TARGET WorldEngine::worldengine AND NOT TARGET playworld_core)
+    add_library(playworld_core INTERFACE IMPORTED)
+    target_link_libraries(playworld_core INTERFACE WorldEngine::worldengine)
+endif()
+
+# Provide unprefixed worldengine alias for external consumers
+if(TARGET WorldEngine::worldengine AND NOT TARGET worldengine)
+    add_library(worldengine INTERFACE IMPORTED)
+    target_link_libraries(worldengine INTERFACE WorldEngine::worldengine)
+endif()
+
+check_required_components(WorldEngine)
