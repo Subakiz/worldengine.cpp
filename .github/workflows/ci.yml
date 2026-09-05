@@ -33,7 +33,7 @@ jobs:
             cxx: clang++
             cmake_flags: "-DPLAYWORLD_BUILD_TESTS=ON"
 
-          - os: windows-2022
+          - os: windows-latest
             compiler: msvc
             cc: cl
             cxx: cl
@@ -65,6 +65,10 @@ jobs:
         run: |
           choco install cmake ninja
 
+      - name: Setup MSVC Developer Command Prompt
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure CMake
         env:
           CC: ${{ matrix.cc }}
@@ -88,6 +92,14 @@ jobs:
           CXX: ${{ matrix.cxx }}
         run: |
           ./scripts/run_all_tests.sh
+
+      - name: Upload Test Verification Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-${{ matrix.os }}-${{ matrix.compiler }}
+          path: test_report.json
+          if-no-files-found: ignore
 
       - name: Execute Benchmark CLI Smoke Test
         shell: bash
@@ -127,3 +139,53 @@ jobs:
           sleep 2
           curl -f -I http://localhost:8000/index.html
           kill $SERVER_PID
+
+  sanitizer-verification:
+    name: ASan & UBSan Audit • ${{ matrix.os }} • ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: clang-18
+            cc: clang-18
+            cxx: clang++-18
+            leak_detect: "1"
+
+          - os: macos-14
+            compiler: apple-clang
+            cc: clang
+            cxx: clang++
+            leak_detect: "0"
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Linux Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang-18 llvm-18
+
+      - name: Setup macOS Dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake ninja
+
+      - name: Run Dedicated Sanitizer Test Suite
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+          ASAN_OPTIONS: "halt_on_error=1:abort_on_error=0:allocator_may_return_null=1:detect_stack_use_after_return=1:quarantine_size_mb=16:symbolize=1:detect_leaks=${{ matrix.leak_detect }}"
+          UBSAN_OPTIONS: "halt_on_error=1:abort_on_error=0:print_stacktrace=1:report_error_type=1"
+        run: |
+          ./scripts/run_all_tests.sh --sanitize
+
+      - name: Upload Sanitizer Verification Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanitizer-test-report-${{ matrix.os }}
+          path: test_report_sanitizer.json
