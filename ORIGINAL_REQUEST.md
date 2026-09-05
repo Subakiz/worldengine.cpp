@@ -171,3 +171,58 @@ Store the formal test audit metrics, benchmark telemetry, and newly discovered g
 ### Git & Agent Memory
 - [ ] `git status` reports a clean working tree with no untracked files and atomic Conventional Commits.
 - [ ] Test certification summary and lessons are recorded in `agentmemory`.
+
+## 2026-09-05T04:09:50Z
+
+Prepare WorldEngine.cpp (PlayWorld) for public GitHub launch with production-grade release packaging, standard CMake install targets, automated tarball distribution with SHA256 checksums, open-source community governance files, test certification README integration, and a turnkey launch kit.
+
+Working directory: /Users/nabils/antigravity/open source
+Integrity mode: development
+
+## Requirements
+
+### R1. Standard CMake Installation & CPack Packaging
+Configure standard CMake install rules that install runtime binaries to `bin/`, static library targets to `lib/`, and public header files to `include/worldengine/`. Provide a CMake package configuration (`WorldEngineConfig.cmake`) allowing external consumers to find and link against WorldEngine via `find_package(WorldEngine)`. Configure CPack to produce standalone compressed archives (`.tar.gz` and `.zip`).
+
+### R2. Automated Standalone Release Distribution Script
+Provide an executable release packaging script (`scripts/package_release.sh`) that compiles a clean Release build, packages the CLI binary, static library, public headers, sample neural model (`synthetic_model.pwmf`), and zero-install WebGPU HTML5 player into `dist/worldengine-v0.1.0-<platform>-<arch>.tar.gz`, and generates cryptographic SHA256 checksums in `dist/SHA256SUMS.txt`.
+
+### R3. Open-Source Community Governance & Health Files
+Establish complete GitHub community health standards in the repository root and `.github/`:
+- `CONTRIBUTING.md`: C++20 architecture guidelines, development setup, build/test execution instructions, coding standards, and PR submission rules.
+- `CODE_OF_CONDUCT.md`: Contributor Covenant v2.1.
+- `SECURITY.md`: Security vulnerability disclosure policy, response timeline SLA, and supported versions.
+- GitHub Issue & PR Templates: Bug report (`.github/ISSUE_TEMPLATE/bug_report.md`), feature request (`.github/ISSUE_TEMPLATE/feature_request.md`), and pull request template (`.github/pull_request_template.md`).
+
+### R4. README Audit Certification & Installation Integration
+Update `README.md` to:
+- Feature the test audit certification badge and include an "Adversarial Security & Test Certification" section citing the results from `COMPREHENSIVE_TEST_REPORT.md` (100% pass across 11 suites, 0 sanitizer violations, 0 memory leaks, 15.9M actions/sec lock-free throughput, 5,000-step soak).
+- Document system installation instructions via `cmake --install` and consumption via `find_package(WorldEngine)`.
+- Audit and ensure all repository links, relative paths, and references are valid.
+
+### R5. Turnkey Multi-Platform Launch Distribution Kit
+Create `LAUNCH_KIT.md` containing publication-ready, persuasive launch copy formatted for:
+- Hacker News (Show HN title, opening hook comment, technical architecture breakdown, and benchmark highlights).
+- Twitter / X thread (hook, demo player link, technical innovation, benchmark chart representation, call to action).
+- Reddit posts tailored for `r/LocalLLaMA`, `r/MachineLearning`, `r/programming`, and `r/gamedev`.
+- Product Hunt / Discord release announcements.
+
+### R6. Git Clean Working Tree & Release Tagging
+Ensure all new files and modifications are committed with clean Conventional Commits (`feat(release):`, `docs(governance):`, etc.) leaving a clean working tree on branch `main`, tagged with release tag `v0.1.0`.
+
+## Acceptance Criteria
+
+### Build & Packaging Verification
+- [ ] `cmake -B build-test -DCMAKE_INSTALL_PREFIX=/tmp/worldengine_install && cmake --build build-test --target install` succeeds without warnings, populating `bin/`, `lib/`, `include/worldengine/`, and `lib/cmake/WorldEngine/`.
+- [ ] `./scripts/package_release.sh` executes end-to-end, producing `dist/worldengine-v0.1.0-*.tar.gz` and `dist/SHA256SUMS.txt`.
+- [ ] `shasum -a 256 -c dist/SHA256SUMS.txt` validates with OK for all generated archives.
+- [ ] `./scripts/run_all_tests.sh` passes 100% across all 11 test suites with 0 failures.
+
+### Governance & Community Standards
+- [ ] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `.github/ISSUE_TEMPLATE/bug_report.md`, `.github/ISSUE_TEMPLATE/feature_request.md`, and `.github/pull_request_template.md` exist and contain accurate project details.
+
+### Documentation & Git Hygiene
+- [ ] `README.md` includes the test audit badge, test audit section linking to `COMPREHENSIVE_TEST_REPORT.md`, and installation instructions.
+- [ ] `LAUNCH_KIT.md` is complete with dedicated sections for Hacker News, Twitter/X, Reddit, and Discord.
+- [ ] `git status` reports a clean working tree with 0 uncommitted changes.
+- [ ] `git tag -l v0.1.0` confirms tag exists on `main`.
