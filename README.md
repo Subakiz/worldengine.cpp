@@ -11,15 +11,15 @@
 
 <br/>
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/playworld/worldengine.cpp/ci.yml?branch=main&style=flat-square&logo=github&label=build)](https://github.com/playworld/worldengine.cpp/actions)
-[![Test Audit Certification](https://img.shields.io/badge/Test%20Audit-100%25%20Passing%20(11%20Suites)-brightgreen?style=flat-square&logo=checkmarx)](COMPREHENSIVE_TEST_REPORT.md)
-[![Sanitizer Audit](https://img.shields.io/badge/Sanitizers-ASan%20%7C%20UBSan%20Clean-success?style=flat-square&logo=shield)](COMPREHENSIVE_TEST_REPORT.md)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Subakiz/worldengine.cpp/ci.yml?branch=main&style=flat-square&logo=github&label=build)](https://github.com/Subakiz/worldengine.cpp/actions)
+[![Test Audit Certification](https://img.shields.io/badge/Test%20Audit-100%25%20Passing%20(11%20Suites)-brightgreen?style=flat-square&logo=checkmarx)](docs/test_audit.md)
+[![Sanitizer Audit](https://img.shields.io/badge/Sanitizers-ASan%20%7C%20UBSan%20Clean-success?style=flat-square&logo=shield)](docs/test_audit.md)
 [![WebGPU Demo](https://img.shields.io/badge/WebGPU-Live%20Demo-646CFF?style=flat-square&logo=googlechrome&logoColor=white)](https://playworld.run)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
 [![C++ Standard](https://img.shields.io/badge/C%2B%2B-20-00599C?style=flat-square&logo=c%2B%2B&logoColor=white)](CMakeLists.txt)
 [![HuggingFace Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model%20Zoo-yellow?style=flat-square)](https://huggingface.co/playworld)
 [![Discord](https://img.shields.io/discord/1234567890?style=flat-square&logo=discord&logoColor=white&label=discord&color=5865F2)](https://discord.gg/playworld)
-[![GitHub Stars](https://img.shields.io/github/stars/playworld/worldengine.cpp?style=flat-square&logo=github)](https://github.com/playworld/worldengine.cpp/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/Subakiz/worldengine.cpp?style=flat-square&logo=github)](https://github.com/Subakiz/worldengine.cpp/stargazers)
 
 <br/>
 
@@ -108,7 +108,7 @@ playworld run minecraft
 ### Option B: Clean 3-Step Native C++ Build (Zero Python Dependencies)
 ```bash
 # 1. Clone repository
-git clone https://github.com/playworld/worldengine.cpp.git
+git clone https://github.com/Subakiz/worldengine.cpp.git
 cd worldengine.cpp
 
 # 2. Build native binary with CMake (C++20 standard)
@@ -195,7 +195,7 @@ Measured real-world performance on consumer desktop and laptop hardware:
 
 ## Adversarial Security & Test Certification
 
-`WorldEngine.cpp` is engineered for zero-crash stability and validated through an exhaustive, four-tier verification campaign documented in [`COMPREHENSIVE_TEST_REPORT.md`](COMPREHENSIVE_TEST_REPORT.md).
+`WorldEngine.cpp` is engineered for zero-crash stability and validated through an exhaustive, four-tier verification campaign documented in [`docs/test_audit.md`](docs/test_audit.md).
 
 Every release passes dual-compiler verification under Clang C++20 in standard Release mode (`-O3`) with Apple Mach kernel memory leak auditing (`/usr/bin/leaks --atExit`) and compiler Sanitizer mode (`-fsanitize=address,undefined -fno-omit-frame-pointer`).
 
@@ -222,7 +222,7 @@ Verify the full test matrix locally in under 30 seconds:
 # Execute AddressSanitizer & UndefinedBehaviorSanitizer audit:
 ./scripts/run_all_tests.sh --sanitize
 ```
-See [`COMPREHENSIVE_TEST_REPORT.md`](COMPREHENSIVE_TEST_REPORT.md) for full threat model analysis, fuzzing mutation breakdowns, and latency percentile distributions.
+See [`docs/test_audit.md`](docs/test_audit.md) for full threat model analysis, fuzzing mutation breakdowns, and latency percentile distributions.
 
 ---
 
@@ -255,7 +255,7 @@ Pre-quantized starter models hosted on [Hugging Face (`huggingface.co/playworld`
 - [Contributing Guidelines](CONTRIBUTING.md): C++20 architectural invariants, 64-byte SIMD alignment, lock-free concurrency, and PR submission protocol.
 - [Code of Conduct](CODE_OF_CONDUCT.md): Contributor Covenant v2.1 standards, pledge, and enforcement procedures.
 - [Security Policy](SECURITY.md): Vulnerability disclosure policy, attack surface definitions, and 24h/14-day SLA commitments.
-- [Comprehensive Test Audit](COMPREHENSIVE_TEST_REPORT.md): Full empirical verification logs, fuzzing matrices, and benchmark percentiles.
+- [Comprehensive Test Audit](docs/test_audit.md): Full empirical verification logs, fuzzing matrices, and benchmark percentiles.
 
 ---
 

@@ -79,3 +79,12 @@ models/*.pwmf
 .system_generated/
 tmp/
 temp/
+
+# Internal Planning & Strategy Files
+*ORIGINAL_REQUEST*.md
+*WINNING_PROJECT_PLAN*.md
+*COMPARATIVE_OPPORTUNITY*.md
+*GITHUB_LAUNCH_STRATEGY*.md
+*TEST_READY*.md
+*LAUNCH_KIT*.md
+verification/

@@ -216,7 +216,9 @@ fi
 # 3.6 Documentation & Licensing
 cp "${ROOT_DIR}/README.md" "${BUNDLE_DIR}/README.md"
 cp "${ROOT_DIR}/LICENSE" "${BUNDLE_DIR}/LICENSE"
-if [ -f "${ROOT_DIR}/COMPREHENSIVE_TEST_REPORT.md" ]; then
+if [ -f "${ROOT_DIR}/docs/test_audit.md" ]; then
+    cp "${ROOT_DIR}/docs/test_audit.md" "${BUNDLE_DIR}/TEST_AUDIT.md"
+elif [ -f "${ROOT_DIR}/COMPREHENSIVE_TEST_REPORT.md" ]; then
     cp "${ROOT_DIR}/COMPREHENSIVE_TEST_REPORT.md" "${BUNDLE_DIR}/COMPREHENSIVE_TEST_REPORT.md"
 fi
 
