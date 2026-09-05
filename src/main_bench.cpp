@@ -31,8 +31,17 @@
 #endif
 
 #if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <psapi.h>
+#if defined(_MSC_VER)
+#pragma comment(lib, "psapi.lib")
+#endif
 #endif
 
 namespace {
@@ -436,9 +445,9 @@ int main(int argc, char* argv[]) {
     }
     double stddev_us = (opts.steps > 1) ? std::sqrt(sum_sq_diff / static_cast<double>(opts.steps)) : 0.0;
 
-    size_t idx_p50 = std::min(sorted_latencies.size() - 1, static_cast<size_t>(0.50 * opts.steps));
-    size_t idx_p95 = std::min(sorted_latencies.size() - 1, static_cast<size_t>(0.95 * opts.steps));
-    size_t idx_p99 = std::min(sorted_latencies.size() - 1, static_cast<size_t>(0.99 * opts.steps));
+    size_t idx_p50 = (std::min)(sorted_latencies.size() - 1, static_cast<size_t>(0.50 * opts.steps));
+    size_t idx_p95 = (std::min)(sorted_latencies.size() - 1, static_cast<size_t>(0.95 * opts.steps));
+    size_t idx_p99 = (std::min)(sorted_latencies.size() - 1, static_cast<size_t>(0.99 * opts.steps));
 
     uint64_t p50_us = sorted_latencies[idx_p50];
     uint64_t p95_us = sorted_latencies[idx_p95];
@@ -457,7 +466,7 @@ int main(int argc, char* argv[]) {
     uint64_t voxel_queries = static_cast<uint64_t>(opts.steps);
     uint64_t voxel_hits = static_cast<uint64_t>(std::round(telemetry_hit_rate * static_cast<float>(voxel_queries)));
     double voxel_hit_rate_pct = static_cast<double>(telemetry_hit_rate) * 100.0;
-    size_t active_voxel_entries = std::min<size_t>(static_cast<size_t>(opts.steps), opts.voxel_capacity);
+    size_t active_voxel_entries = (std::min)(static_cast<size_t>(opts.steps), opts.voxel_capacity);
 
     // If estimated VRAM is zero or very small, provide conservative runtime estimate
     if (telemetry_vram_mb < 1.0f) {

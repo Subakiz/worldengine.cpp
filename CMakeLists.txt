@@ -35,6 +35,10 @@ else()
     endif()
 endif()
 
+if(WIN32)
+    add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
+endif()
+
 # Core static library
 set(PLAYWORLD_CORE_SOURCES
     src/core/pwmf_parser.cpp
@@ -95,6 +99,9 @@ endif()
 # Standalone Native Benchmark CLI
 add_executable(worldengine-bench src/main_bench.cpp)
 target_link_libraries(worldengine-bench PRIVATE playworld_core)
+if(WIN32)
+    target_link_libraries(worldengine-bench PRIVATE psapi)
+endif()
 set_target_properties(worldengine-bench PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
@@ -102,6 +109,9 @@ set_target_properties(worldengine-bench PROPERTIES
 # Standalone CLI alias executable (worldengine_cli)
 add_executable(worldengine_cli src/main_bench.cpp)
 target_link_libraries(worldengine_cli PRIVATE playworld_core)
+if(WIN32)
+    target_link_libraries(worldengine_cli PRIVATE psapi)
+endif()
 set_target_properties(worldengine_cli PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     EXPORT_NAME "worldengine_cli"
