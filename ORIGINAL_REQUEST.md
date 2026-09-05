@@ -85,3 +85,89 @@ Implement the core `WorldEngine.cpp` modular architecture conforming to `WINNING
 - [ ] GitHub Actions CI workflow file is syntactically valid and tests the build pipeline.
 - [ ] Production `README.md` includes interactive quickstart instructions, architecture diagram, and feature roadmap.
 - [ ] Tag `v0.1.0-alpha` exists on the main branch.
+
+## 2026-09-04T04:27:40Z
+
+Execute an exhaustive, adversarial testing campaign for `WorldEngine.cpp` (`PlayWorld`) across memory safety, corrupted binary fuzzing, massive multi-threaded concurrency, long-horizon numerical stability, and compiler sanitizers (ASan/UBSan). Deliver hardened test suites and a comprehensive audit report.
+
+Working directory: /Users/nabils/antigravity/open source
+Integrity mode: development
+
+## Requirements
+
+### R1. Adversarial Model Fuzzing & Malformed Binary Suite
+Construct a comprehensive fuzzing harness targeting the `.PWMF` model container parser and block dequantizers. Test permutations including: truncated files, flipped header magic bytes, altered tensor payload CRC32 checksums, out-of-bounds layer offsets, unknown tensor data types, and denormal/NaN/Inf float payloads. All corruptions must be cleanly rejected with specific error codes without crashing or memory faults.
+
+### R2. High-Contention Concurrency & Threading Stress Suite
+Stress-test the lock-free SPSC `ActionRingBuffer` and action conditioning pipeline under extreme contention: simulate 1,000,000 rapid event pushes and pops across concurrent worker threads at varying inter-arrival latencies. Verify zero deadlocks, zero dropped actions, zero buffer corruptions, and strict FIFO ordering under high pressure.
+
+### R3. Long-Horizon 5,000-Step Soak & Numerical Drift Simulation
+Execute an extended continuous simulation soak test (5,000+ forward steps) through the temporal scheduler and Frustum Voxel Memory grid. Track memory RSS deltas over time to guarantee zero unbounded accumulation ($\Delta \text{RSS} < 5\text{ MB}$ over 5,000 steps), verify numerical boundedness of latent tensors (no NaN/Inf explosion), and validate spatial loopback permanence (SSIM $\ge 0.82$ when returning to prior poses).
+
+### R4. AddressSanitizer (ASan) & UndefinedBehaviorSanitizer (UBSan) Clean Pass
+Configure a dedicated sanitizer build target in CMake with `-fsanitize=address,undefined` enabled. Compile and run all unit, integration, fuzzing, and stress test suites under both sanitizers, ensuring zero memory leaks, zero heap/stack buffer overflows, zero use-after-free conditions, and zero undefined behaviors.
+
+### R5. Comprehensive Test Audit & Certification Report
+Synthesize all test executions into a formal, publication-grade `COMPREHENSIVE_TEST_REPORT.md` documenting: test coverage, fuzzing matrices, concurrency throughput, sanitizer audit logs, and performance under extreme conditions. Update the Git repository with the newly created test suites.
+
+## Acceptance Criteria
+
+### Fuzzing & Input Robustness
+- [ ] At least 15 distinct malformed `.PWMF` test cases (corrupted magic, truncated headers, mismatched checksums, negative dimensions, NaN payloads) are executed.
+- [ ] 100% of malformed inputs are gracefully rejected with descriptive error enums; 0 segmentation faults or unhandled exceptions.
+
+### Concurrency & Load Stress
+- [ ] 1,000,000 actions processed through the concurrent ring buffer test harness with 0 dropped events.
+- [ ] Thread sanitizer (TSan) or thread stress validation reports 0 data races and 0 deadlocks.
+
+### Long-Horizon Soak Stability
+- [ ] 5,000-step simulation runs to completion without interruption.
+- [ ] Peak RSS memory growth over the 5,000 steps remains strictly $< 5.0\text{ MB}$.
+- [ ] Latent spatial permanence SSIM remains $\ge 0.82$ upon full 360-degree rotation loopbacks.
+
+### Sanitizer & Memory Hygiene
+- [ ] Full test suite compiles cleanly with `-fsanitize=address,undefined`.
+- [ ] Zero ASan errors (buffer overflows, use-after-free, memory leaks) and zero UBSan errors reported.
+
+### Deliverables & Repository Status
+- [ ] Structured audit report `COMPREHENSIVE_TEST_REPORT.md` is authored and committed to the repository.
+- [ ] All new test executables are integrated into `scripts/run_all_tests.sh` and CMake test targets.
+
+## 2026-09-05T03:07:35Z
+
+Synthesize and finalize the adversarial testing campaign for `WorldEngine.cpp` (`PlayWorld`), producing a publication-grade `COMPREHENSIVE_TEST_REPORT.md`, verifying full CI/build pipelines, securing clean Git commits, and synchronizing knowledge into `agentmemory`.
+
+Working directory: /Users/nabils/antigravity/open source
+Integrity mode: development
+
+## Requirements
+
+### R1. Comprehensive Test Certification & Audit Report
+Synthesize empirical test execution results across all 11 test suites into a publication-grade, structured `COMPREHENSIVE_TEST_REPORT.md`. Document the methodology, threat model, test matrices, and telemetry for:
+- Adversarial binary fuzzing (28 malformed input permutations, zero crashes)
+- High-contention lock-free concurrency (1,000,000 actions, 0 dropped frames)
+- Long-horizon 5,000-step soak simulation (0 NaN/Inf, $\Delta \text{RSS} < 0.02\text{ MB}$, SSIM loopback permanence $\ge 0.82$)
+- Compiler AddressSanitizer & UndefinedBehaviorSanitizer audit logs (0 leaks, 0 buffer overflows, 0 undefined behaviors)
+
+### R2. Build System, Script & CI Workflow Finalization
+Ensure CMakeLists.txt, `scripts/run_all_tests.sh` (supporting standard Release and `--sanitize` passes), and `.github/workflows/ci.yml` multi-platform build matrices are completely synchronized, syntactically valid, and pass with 100% clean exit codes.
+
+### R3. Clean Git Release Commit Hygiene
+Stage and commit all hardened test suites, test runners, configuration updates, and report documentation to the local Git repository following Conventional Commits (`feat(test):`, `docs(audit):`, `ci:`) resulting in a completely clean working tree on branch `main`.
+
+### R4. Agentmemory Knowledge Graph & State Synchronization
+Store the formal test audit metrics, benchmark telemetry, and newly discovered gotchas/rules into the local `agentmemory` MCP server using `memory_save` and `memory_lesson_save`.
+
+## Acceptance Criteria
+
+### Test Validation & Sanitizers
+- [ ] Both standard Release and Sanitizer passes execute with 100% test pass rate across all 11 suites via `./scripts/run_all_tests.sh`.
+- [ ] Sanitizer logs confirm 0 memory leaks, 0 buffer overflows, and 0 undefined behaviors.
+
+### Documentation & Deliverables
+- [ ] `COMPREHENSIVE_TEST_REPORT.md` is fully authored with complete benchmark tables, latency percentiles (P50/P90/P99), and sanitizer audit proof.
+- [ ] `.github/workflows/ci.yml` is syntactically valid and includes the sanitizer testing matrix.
+
+### Git & Agent Memory
+- [ ] `git status` reports a clean working tree with no untracked files and atomic Conventional Commits.
+- [ ] Test certification summary and lessons are recorded in `agentmemory`.
