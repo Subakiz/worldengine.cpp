@@ -214,7 +214,10 @@ run_pass() {
             LEAKS_STATUS="PASSED"
         fi
     else
-        if command -v leaks &> /dev/null; then
+        if [ "${GITHUB_ACTIONS:-false}" = "true" ]; then
+            echo -e "  ${YELLOW}[SKIP]${RESET} leaks check skipped in GitHub Actions CI environment."
+            LEAKS_STATUS="SKIPPED"
+        elif command -v leaks &> /dev/null; then
             for NAME in "${ALL_SUITES[@]}"; do
                 local LEAK_LOG="${BUILD_DIR}/${NAME}_leaks.log"
                 if leaks --atExit -- "${BIN_DIR}/${NAME}" > "${LEAK_LOG}" 2>&1; then

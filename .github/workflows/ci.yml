@@ -7,10 +7,17 @@ on:
   pull_request:
     branches: [ main ]
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build-and-test:
     name: ${{ matrix.os }} • ${{ matrix.compiler }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -113,6 +120,9 @@ jobs:
   web-player-lint:
     name: WebGPU Player Asset Validation
     runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -143,6 +153,9 @@ jobs:
   sanitizer-verification:
     name: ASan & UBSan Audit • ${{ matrix.os }} • ${{ matrix.compiler }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:

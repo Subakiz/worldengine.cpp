@@ -1,5 +1,7 @@
 #include "test_runner.h"
 
+#include <cstring>
+
 #if __has_include("playworld/action_types.h")
 #include "playworld/action_types.h"
 #endif
