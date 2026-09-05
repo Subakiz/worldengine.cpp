@@ -10,6 +10,12 @@
 #include <mach/mach.h>
 #elif defined(__linux__)
 #include <sys/resource.h>
+#elif defined(_WIN32)
+#include <windows.h>
+#include <psapi.h>
+#if defined(_MSC_VER)
+#pragma comment(lib, "psapi.lib")
+#endif
 #endif
 
 namespace playworld {
@@ -26,6 +32,13 @@ inline double QueryRSSMB() noexcept {
     struct rusage usage{};
     if (getrusage(RUSAGE_SELF, &usage) == 0) {
         return static_cast<double>(usage.ru_maxrss) / 1024.0;
+    }
+    return 0.0;
+#elif defined(_WIN32)
+    PROCESS_MEMORY_COUNTERS pmc{};
+    pmc.cb = sizeof(pmc);
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+        return static_cast<double>(pmc.WorkingSetSize) / (1024.0 * 1024.0);
     }
     return 0.0;
 #else

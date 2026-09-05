@@ -65,7 +65,8 @@ inline double QueryInstantaneousRSSMB() noexcept {
     }
     return 0.0;
 #elif defined(_WIN32)
-    PROCESS_MEMORY_COUNTERS pmc;
+    PROCESS_MEMORY_COUNTERS pmc{};
+    pmc.cb = sizeof(pmc);
     if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
         return static_cast<double>(pmc.WorkingSetSize) / (1024.0 * 1024.0);
     }
@@ -324,11 +325,7 @@ TEST(SoakSimulationSuite, SoakSimulation_5000Steps_MemoryRSSBounded) {
               << "  [SOAK RESULT] Baseline RSS: " << baseline_rss << " MB | Peak RSS: " << peak_rss
               << " MB | Peak Delta RSS: " << delta_rss << " MB (Target < 5.0 MB)\n";
 
-#if defined(_WIN32)
-    EXPECT_GE(baseline_rss, 0.0);
-#else
     EXPECT_GT(baseline_rss, 0.0);
-#endif
 #if defined(__SANITIZE_ADDRESS__) || (defined(__has_feature) && __has_feature(address_sanitizer))
     EXPECT_LT(delta_rss, 25.0);
     EXPECT_LT(peak_rss, 1500.0);

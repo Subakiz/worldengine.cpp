@@ -64,7 +64,8 @@ double GetCurrentPeakRSSMegabytes() {
         return static_cast<double>(usage.ru_maxrss) / 1024.0;
     }
 #elif defined(_WIN32)
-    PROCESS_MEMORY_COUNTERS pmc;
+    PROCESS_MEMORY_COUNTERS pmc{};
+    pmc.cb = sizeof(pmc);
     if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
         return static_cast<double>(pmc.PeakWorkingSetSize) / (1024.0 * 1024.0);
     }
