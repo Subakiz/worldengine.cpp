@@ -60,6 +60,10 @@ target_include_directories(playworld_core PUBLIC
 # Ensure C++20 feature requirement propagates transitively to consumers
 target_compile_features(playworld_core PUBLIC cxx_std_20)
 
+if(WIN32)
+    target_link_libraries(playworld_core PUBLIC psapi)
+endif()
+
 # Configure output naming and export identity for static library
 set_target_properties(playworld_core PROPERTIES
     OUTPUT_NAME "worldengine"
